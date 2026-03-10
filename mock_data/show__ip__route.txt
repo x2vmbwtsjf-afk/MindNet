@@ -1,0 +1,7 @@
+Codes: C - connected, S - static, O - OSPF
+
+Gateway of last resort is 10.10.10.254 to network 0.0.0.0
+
+S*    0.0.0.0/0 [1/0] via 10.10.10.254
+C     10.10.10.0/24 is directly connected, GigabitEthernet1/0/1
+C     10.10.20.0/24 is directly connected, Vlan10

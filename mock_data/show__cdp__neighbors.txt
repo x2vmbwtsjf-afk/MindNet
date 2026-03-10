@@ -1,0 +1,4 @@
+Capability Codes: R - Router, S - Switch, I - IGMP
+
+Device ID        Local Intrfce     Holdtme    Capability  Platform  Port ID
+DIST-SW1         Gig 1/0/1         152        S I         C9300     Gig 1/0/24
