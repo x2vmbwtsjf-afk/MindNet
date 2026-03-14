@@ -6,6 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "mindnet"
 version = "0.1.0"
 description = "AI Infrastructure Brain."
+authors = [
+    { name = "MindNet contributors" }
+]
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
@@ -20,7 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: System :: Networking",
 ]
-urls = { Repository = "https://github.com/x2vmbwtsjf-afk/mindnet.git", Issues = "https://github.com/x2vmbwtsjf-afk/mindnet/issues" }
+urls = { Homepage = "https://github.com/x2vmbwtsjf-afk/MindNet", Repository = "https://github.com/x2vmbwtsjf-afk/MindNet", Issues = "https://github.com/x2vmbwtsjf-afk/MindNet/issues" }
 dependencies = [
     "typer>=0.12",
     "rich>=13.0",

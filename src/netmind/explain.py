@@ -63,9 +63,24 @@ def _parse_interfaces_status(output: str) -> list[Interface]:
         if not line.strip() or line.startswith("Port"):
             continue
         parts = line.split()
-        if len(parts) < 3:
+        if len(parts) < 2:
             continue
-        interfaces.append(Interface(name=parts[0], switchport_status=parts[2]))
+        status_index = 1
+        known_statuses = {
+            "connected",
+            "notconnect",
+            "disabled",
+            "inactive",
+            "monitoring",
+            "sfpabsent",
+            "suspended",
+            "err-disabled",
+        }
+
+        if len(parts) > 2 and parts[1].lower() not in known_statuses:
+            status_index = 2
+
+        interfaces.append(Interface(name=parts[0], switchport_status=parts[status_index]))
     return interfaces
 
 

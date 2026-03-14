@@ -1,64 +1,96 @@
 # MindNet
 
-**AI Infrastructure Brain**
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/x2vmbwtsjf-afk/MindNet/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/x2vmbwtsjf-afk/MindNet/actions/workflows/ci.yml)
 
-MindNet is a local-first CLI for infrastructure analysis. It connects to network
-devices over SSH, collects operational state, turns raw command output into a
-structured snapshot, and explains what to check next.
+MindNet is a local-first CLI for infrastructure engineers that connects to network devices, collects operational state, converts raw CLI output into structured snapshots, and explains what to check next.
 
-MindNet is intentionally local and terminal-first:
-- no web UI
-- no SaaS control plane
-- no database requirement
-- no outbound telemetry by default
+It is designed for engineers who want a practical troubleshooting tool, not a hosted platform. MindNet stays terminal-first, runs locally, avoids outbound telemetry by default, and keeps deterministic analysis at the center of the product.
 
-The current package path remains `netmind` for compatibility, but the product
-name and primary CLI command are `MindNet` and `mindnet`.
+The package path remains `netmind` for compatibility, but the product name and primary CLI command are `MindNet` and `mindnet`.
 
-## Current Status
+## What Problem MindNet Solves
 
-MindNet is at an early but usable MVP stage.
+Network troubleshooting usually starts with raw device commands and a mental checklist. That is effective, but it is repetitive, hard to standardize, and easy to lose context across devices and incidents.
 
-Implemented today:
-- `connect` for connectivity validation
-- `run` for single-command execution
-- `audit` for deterministic device analysis
-- `explain-output` for pasted offline CLI analysis
-- `analyze-file` for saved offline CLI output analysis
-- `snapshot export/show/analyze`
-- `connector add/list/show/remove`
-- secure local credential storage via OS keyring
-- local interactive shell
-- full mock mode for offline development
+MindNet helps by:
+
+- connecting to devices over SSH
+- collecting a known set of operational commands
+- normalizing the results into a structured snapshot
+- running deterministic checks on the collected state
+- returning plain-language summaries and useful next commands
+
+## Who It Is For
+
+- network engineers working on switches and routers
+- platform or infra teams responsible for network-adjacent operations
+- operators who want local analysis without a SaaS dependency
+- teams that want AI-assisted explanation on top of a deterministic core
+
+## Current Stage
+
+MindNet is an early but usable MVP. The core CLI, snapshot model, rule engine, offline analysis paths, connector management, mock mode, and tests are already present. The project is still maturing in documentation, CI, connector breadth, and deeper analysis coverage.
+
+## Features
+
+- local-first CLI with `connect`, `run`, `audit`, `shell`, and snapshot workflows
+- deterministic analysis over structured `DeviceSnapshot` data
+- offline analysis for pasted or saved command output
+- mock mode for demos, development, and safe testing
+- connector management with OS keyring-backed secret storage
+- SSH and connector abstraction layers for future expansion
+- plain-language explanations and recommended next commands
+
+## Architecture Overview
+
+MindNet follows a straightforward local pipeline:
+
+```text
+Operator Request
+      |
+      v
+CLI Layer
+      |
+      v
+Connector Resolution
+      |
+      v
+SSH / API Collection
+      |
+      v
+Snapshot Model
+      |
+      v
+Deterministic Rules
+      |
+      v
+Formatter / Explanation Layer
+```
+
+The key design choice is that deterministic collection and rules remain the source of truth. Any explanation layer should build on that output, not replace it.
+
+More detail is available in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Installation
 
 Requirements:
+
 - Python 3.11+
-- a working virtual environment
+- a virtual environment
 - OS keyring support if you want saved connector secrets
 
 ```bash
-git clone https://github.com/x2vmbwtsjf-afk/mindnet.git
-cd mindnet
-
 python -m venv .venv
 source .venv/bin/activate
-
-pip install -r requirements.txt
-pip install -e .
+pip install -e ".[dev]"
 ```
 
-Optional isolated install with `pipx`:
+Optional install with `pipx`:
 
 ```bash
 pipx install .
-```
-
-Install directly from GitHub with `pipx`:
-
-```bash
-pipx install git+https://github.com/x2vmbwtsjf-afk/mindnet.git
 ```
 
 Verify:
@@ -67,24 +99,18 @@ Verify:
 mindnet version
 ```
 
-Compatibility note:
+Compatibility alias:
 
 ```bash
 netmind version
 ```
 
-Both commands work. `mindnet` is the preferred command name.
+## CLI Usage Examples
 
-MindNet is intended to be used as an installed CLI product. The supported entry
-paths are `mindnet` and the compatibility alias `netmind`, not `python main.py`.
-
-## Quick Start
-
-### Mock mode
+Mock mode:
 
 ```bash
 export NETMIND_MOCK=true
-
 mindnet connect 10.0.0.1
 mindnet run 10.0.0.1 "show version"
 mindnet audit 10.0.0.1
@@ -92,27 +118,14 @@ mindnet snapshot export 10.0.0.1 /tmp/mindnet-snapshot.json
 mindnet snapshot analyze /tmp/mindnet-snapshot.json
 ```
 
-MindNet includes built-in mock responses and can also read command-specific
-files from `mock_data/*.txt`.
-
-Example:
-- `mock_data/show__ip__route.txt` maps to `show ip route`
-
-### Live device
+Live device:
 
 ```bash
 mindnet connect 192.168.1.1 --username admin --password 'secret'
-
-export NETMIND_USERNAME=admin
-export NETMIND_PASSWORD='secret'
-mindnet audit 192.168.1.1
+mindnet audit 192.168.1.1 --username admin --password 'secret'
 ```
 
-MindNet loads `.env` automatically through `python-dotenv`.
-
-### Offline analysis
-
-MindNet can analyze pasted or saved CLI outputs without a live device session.
+Offline analysis:
 
 ```bash
 mindnet analyze-file mock_data/show__ip__route.txt
@@ -120,135 +133,21 @@ mindnet analyze-file --type interfaces-status mock_data/show__interfaces__status
 cat mock_data/show__cdp__neighbors.txt | mindnet explain-output
 ```
 
-## CLI Commands
-
-### `mindnet version`
-
-Print version and product descriptor.
-
-### `mindnet connect <target>`
-
-Validate connectivity only.
-
-`<target>` can be:
-- a host or IP address
-- a saved connector name
-
-Examples:
+Connector management:
 
 ```bash
-mindnet connect 192.168.1.1 --username admin --password 'secret'
+mindnet connector add
+mindnet connector list
+mindnet connector show lab-core-1
 mindnet connect lab-core-1
 ```
 
-### `mindnet run <host> "<command>"`
+## Connectors
 
-Run one command and print:
-- raw output
-- plain-language summary
-- recommended next commands
-
-Example:
-
-```bash
-mindnet run 192.168.1.1 "show ip interface brief"
-```
-
-### `mindnet audit <host>`
-
-Run the built-in audit bundle, collect a `DeviceSnapshot`, evaluate findings,
-and print explanations and next steps.
-
-Example:
-
-```bash
-mindnet audit 192.168.1.1
-mindnet audit 192.168.1.1 --raw
-```
-
-Exit codes:
-- `0`: success, no critical findings
-- `1`: connection or execution failure
-- `2`: audit completed with critical findings
-
-### `mindnet explain-output`
-
-Analyze pasted CLI output from standard input.
-
-Supported offline types:
-- `ip-int-brief`
-- `interfaces-status`
-- `ip-route`
-- `cdp-neighbors`
-
-Examples:
-
-```bash
-cat mock_data/show__ip__route.txt | mindnet explain-output
-cat mock_data/show__interfaces__status.txt | mindnet explain-output --type interfaces-status
-```
-
-### `mindnet analyze-file <path>`
-
-Analyze saved CLI output from a file.
-
-Examples:
-
-```bash
-mindnet analyze-file mock_data/show__ip__interface__brief.txt
-mindnet analyze-file --type cdp-neighbors mock_data/show__cdp__neighbors.txt
-```
-
-### `mindnet shell`
-
-Start the local interactive shell.
-
-The shell is local-only and intended for safe demos and UX workflows.
-
-### `mindnet snapshot export <host> <path>`
-
-Run collectors and save a structured snapshot as JSON.
-
-### `mindnet snapshot show <path>`
-
-Print a short summary of a saved snapshot.
-
-### `mindnet snapshot analyze <path>`
-
-Load a saved snapshot and run the same deterministic rule engine used by
-`audit`.
-
-## Connector Management
-
-MindNet supports saved connectors with local metadata plus OS-managed secrets.
-
-### `mindnet connector add`
-
-Prompts for:
-- connector name
-- connector type
-- host
-- platform
-- username
-- password or token
-
-Sensitive values are stored in the OS keyring, not in project files.
-
-### `mindnet connector list`
-
-Lists saved connector metadata without exposing secrets.
-
-### `mindnet connector show <name>`
-
-Shows connector metadata only.
-
-### `mindnet connector remove <name>`
-
-Removes connector metadata and deletes the associated keyring secret.
-
-## Security Model
+MindNet currently supports saved connectors with local metadata and OS-managed secrets.
 
 Stored in local config:
+
 - connector name
 - host
 - platform
@@ -256,33 +155,17 @@ Stored in local config:
 - username
 
 Stored in OS keyring only:
+
 - password
 - token
 - API secret
 
-Backends used through the `keyring` library:
-- macOS Keychain
-- Windows Credential Manager
-- Linux Secret Service
+Backends depend on the `keyring` library and may use macOS Keychain, Windows Credential Manager, or Linux Secret Service depending on the host platform.
 
-## Architecture
+## Snapshots And Analysis
 
-The production CLI lives under `src/netmind/`.
+The default audit bundle currently collects:
 
-Core modules:
-- `src/netmind/cli.py`: Typer command layer
-- `src/netmind/connectors/`: connector abstraction and transport backends
-- `src/netmind/security/`: config metadata plus keyring secret handling
-- `src/netmind/audit.py`: collection workflow
-- `src/netmind/explain.py`: parsing and explanation logic
-- `src/netmind/rules.py`: deterministic finding engine
-- `src/netmind/models.py`: typed models including `DeviceSnapshot`
-- `src/netmind/formatters.py`: Rich terminal rendering
-- `src/netmind/mock_device.py`: offline development path
-
-## Audit Bundle
-
-The default audit currently collects:
 - `show version`
 - `show ip interface brief`
 - `show interfaces status`
@@ -290,71 +173,63 @@ The default audit currently collects:
 - `show ip route`
 - `show interfaces`
 
-The outputs are parsed into:
+Those outputs are normalized into a snapshot that can include:
+
 - interfaces
 - routes
 - neighbors
 - findings
 
-## Development
+Saved snapshots let you analyze device state later without reconnecting to the original target.
 
-Run checks:
+## Security Philosophy
 
-```bash
-source .venv/bin/activate
-export PYTHONPATH=src
-python -m compileall src tests
-pytest -q
-```
+MindNet is intended for observation and explanation, not autonomous remediation.
 
-Mock smoke:
+- local-first is the default operating model
+- secrets should live in the OS keyring, not in tracked files
+- deterministic rules stay ahead of AI-generated interpretation
+- mock mode should remain available for safe demos and tests
+- no outbound telemetry is enabled by default
 
-```bash
-export NETMIND_MOCK=true
-mindnet connect 10.0.0.1
-mindnet run 10.0.0.1 "show ip route"
-mindnet audit 10.0.0.1
-```
+The security model is documented in [SECURITY.md](SECURITY.md).
 
-Verification note:
-- `python -m compileall src tests netmind` completed successfully in this environment.
-- If `pytest` is flaky in your current shell environment, document that explicitly
-  instead of claiming full verification.
-
-Future packaging note:
-- A standalone binary build can be added later with PyInstaller.
-- That is not part of the current release flow.
-
-## Project Layout
+## Example Troubleshooting Session
 
 ```text
-netmind/
-├── AGENT.md
-├── README.md
-├── ROADMAP.md
-├── LICENSE
-├── pyproject.toml
-├── requirements.txt
-├── mock_data/
-├── src/
-│   └── netmind/
-│       ├── cli.py
-│       ├── audit.py
-│       ├── explain.py
-│       ├── rules.py
-│       ├── models.py
-│       ├── formatters.py
-│       ├── ssh_client.py
-│       ├── snapshot_store.py
-│       ├── mock_device.py
-│       ├── connectors/
-│       └── security/
-└── tests/
+$ export NETMIND_MOCK=true
+$ mindnet audit 10.0.0.1
+
+Connecting to 10.0.0.1
+Collecting audit bundle
+Building device snapshot
+Evaluating deterministic rules
+
+Critical findings:
+  - Port Gi1/0/3 is err-disabled
+
+Recommended next commands:
+  - show interfaces Gi1/0/3
+  - show port-security interface Gi1/0/3
+  - show errdisable recovery
 ```
+
+## Developer Onboarding
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+pytest
+mindnet --help
+```
+
+More detail is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Roadmap
 
-High-level phases:
+MindNet is being developed in six phases:
+
 1. CLI MVP
 2. Snapshot model
 3. Rule engine
@@ -364,10 +239,6 @@ High-level phases:
 
 See [ROADMAP.md](ROADMAP.md) for details.
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
-
 ## License
 
-MIT
+MindNet is released under the MIT License. See [LICENSE](LICENSE).

@@ -1,6 +1,6 @@
 # MindNet Roadmap
 
-This roadmap is organized into six execution phases.
+This roadmap is organized into six execution phases and is intended to keep MindNet practical, local-first, and trustworthy as the project grows.
 
 ## Phase 1 — CLI MVP
 Goal:
@@ -16,6 +16,11 @@ Exit Criteria:
 - Fresh install to first successful mock audit in under 10 minutes
 - Core commands validated in mock mode
 - Basic parser and formatter regression tests passing
+
+Current emphasis:
+- tighten contributor onboarding and CI
+- broaden command parsing and offline analysis coverage
+- keep the product polished without turning it into a hosted platform
 
 ## Phase 2 — Snapshot Model
 Goal:
