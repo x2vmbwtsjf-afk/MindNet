@@ -59,24 +59,31 @@ def _parse_ip_interface_brief(output: str) -> list[Interface]:
 def _parse_interfaces_status(output: str) -> list[Interface]:
     """Parse `show interfaces status` output into Interface models."""
     interfaces: list[Interface] = []
+    known_statuses = {
+        "connected",
+        "notconnect",
+        "disabled",
+        "inactive",
+        "monitoring",
+        "sfpabsent",
+        "suspended",
+        "err-disabled",
+    }
+
     for line in output.strip().splitlines():
         if not line.strip() or line.startswith("Port"):
             continue
+        port = line[:10].strip()
+        status = line[29:42].strip()
+        if port and status:
+            interfaces.append(Interface(name=port, switchport_status=status))
+            continue
+
         parts = line.split()
         if len(parts) < 2:
             continue
-        status_index = 1
-        known_statuses = {
-            "connected",
-            "notconnect",
-            "disabled",
-            "inactive",
-            "monitoring",
-            "sfpabsent",
-            "suspended",
-            "err-disabled",
-        }
 
+        status_index = 1
         if len(parts) > 2 and parts[1].lower() not in known_statuses:
             status_index = 2
 
@@ -101,10 +108,10 @@ def _parse_cdp_neighbors(output: str) -> list[Neighbor]:
         remote_interface = ""
         if len(parts) >= 3:
             local_interface = f"{parts[1]} {parts[2]}"
-        if len(parts) >= 6:
-            platform = parts[-2]
-        if len(parts) >= 1:
-            remote_interface = parts[-1]
+        if len(parts) >= 4:
+            remote_interface = " ".join(parts[-2:])
+        if len(parts) >= 3:
+            platform = parts[-3]
 
         neighbors.append(
             Neighbor(

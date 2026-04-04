@@ -1,69 +1,102 @@
-# MindNet Security Model
+# Security Model
 
-MindNet is designed as a local operator tool for network diagnostics and analysis. Its security posture is based on minimizing exposure, keeping secrets out of source-controlled files, and preserving a deterministic core for analysis.
+MindNet is an infrastructure intelligence project. That means its security model
+must be stricter than a normal local utility.
 
-## Core Principles
+This document defines the baseline security expectations for the project.
+
+## Core principles
 
 - local-first by default
-- no outbound telemetry by default
-- secrets stored in the OS keyring when possible
-- deterministic rules as the source of truth
-- no autonomous remediation by default
+- explicit execution boundaries
+- no silent credential leakage
+- deterministic behavior before autonomy
+- secure-by-default integration posture
 
-## Credential Handling
+## Local-first expectations
 
-MindNet supports saved connectors with:
+MindNet should default to local execution and local storage unless a future
+integration explicitly changes that behavior.
 
-- metadata stored locally
-- secrets stored through the host OS keyring backend
+Implications:
+- infrastructure context should not be sent off-box by default
+- stored state should remain local unless exported intentionally
+- diagnostics should be reproducible without a hosted dependency
 
-This reduces the need to keep passwords or API tokens in shell history or project files.
+## Credential handling
 
-Recommended practice:
+MindNet already uses a split model:
+- non-sensitive connector metadata in local config
+- secrets in the OS keyring
 
-- prefer saved connectors or environment variables over inline secrets
-- avoid committing `.env` files or raw device credentials
-- use mock mode for demos, tests, and screenshots
+Security expectations:
+- never store passwords or tokens in plaintext project files
+- never print secrets in CLI output
+- never log secrets in debug paths
+- prefer OS-native secret storage over custom encryption
 
-## Local State
+## Execution boundaries
 
-MindNet intentionally avoids introducing a hosted control plane or a mandatory external database.
+MindNet is primarily a reasoning and analysis layer.
 
-Local state may include:
+By default, it should:
+- inspect
+- model
+- reason
+- explain
 
-- connector metadata
-- exported snapshots
-- mock data
-- session history or logs depending on workflow
+It should not:
+- make destructive changes automatically
+- apply remediation without explicit operator intent
+- hide execution side effects behind AI language
 
-Operators should treat snapshot files as potentially sensitive because they may contain device topology, routing, or interface state.
+If MindNet later integrates with execution systems, those boundaries must remain
+visible and auditable.
 
-## Deterministic Core
+## Safe integration with external tools
 
-MindNet’s main trust boundary is its deterministic analysis path:
+Future integrations may include:
+- SSH
+- infrastructure APIs
+- configuration systems
+- execution tools such as MidMan
 
-- collectors gather device outputs
-- parsers normalize them into typed snapshot data
-- the rule engine produces findings from that structured state
+Integration rules:
+- connectors should be explicit and typed
+- trust boundaries should be documented
+- execution handoff should be separable from reasoning
+- external actions should require clear operator intent
 
-Any AI-assisted explanation layer should consume this evidence rather than replace it.
+## Threat assumptions
 
-## Threat Model Assumptions
+MindNet should assume:
+- infrastructure data is sensitive
+- topology and routing information may be confidential
+- credentials are valuable targets
+- AI-generated output can be wrong or overconfident
+- logs and exported snapshots may leave the local environment if mishandled
 
-MindNet assumes:
+## What MindNet should never do by default
 
-- the operator is authorized to access the device
-- device output may contain sensitive infrastructure details
-- local workstations may be less controlled than server-side systems
-- convenience features should not quietly expand data exposure
+MindNet should never, by default:
+- exfiltrate infrastructure context to a remote service
+- store plaintext credentials in repository files
+- execute changes on infrastructure automatically
+- claim certainty when reasoning is based on incomplete context
+- collapse reasoning and execution into an opaque single step
 
-## Safe Defaults
+## Contributor expectations
 
-- mock mode is available for safe testing
-- outbound telemetry is disabled by default
-- connector secrets are not intended to be stored in tracked project files
-- analysis is read-only by design
+When contributing:
+- preserve local-first behavior
+- avoid adding hidden outbound dependencies
+- document any new trust boundary
+- keep secrets out of fixtures and examples
+- update this document if a change affects the security model
 
-## Reporting Security Issues
+## Reporting security concerns
 
-Avoid opening public issues with sensitive vulnerability details until the project has a dedicated private disclosure channel.
+Until a formal disclosure process exists:
+- do not publish sensitive exploit details in public issues
+- report serious concerns privately to the maintainer first
+- include reproduction detail, scope, and impact clearly

@@ -65,6 +65,7 @@ class TestParseCdpNeighbors:
         neighbors = _parse_cdp_neighbors(MOCK_RESPONSES["show cdp neighbors"])
         assert all(isinstance(neighbor, Neighbor) for neighbor in neighbors)
         assert any(neighbor.device_id == "SW-CORE-01" for neighbor in neighbors)
+        assert any(neighbor.platform == "WS-C3750" for neighbor in neighbors)
 
     def test_no_neighbors(self):
         no_neighbor_output = (

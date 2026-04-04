@@ -1,244 +1,266 @@
 # MindNet
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![CI](https://github.com/x2vmbwtsjf-afk/mindnet/actions/workflows/ci.yml/badge.svg)](https://github.com/x2vmbwtsjf-afk/mindnet/actions/workflows/ci.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CI](https://github.com/x2vmbwtsjf-afk/MindNet/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/x2vmbwtsjf-afk/MindNet/actions/workflows/ci.yml)
 
-MindNet is a local-first CLI for infrastructure engineers that connects to network devices, collects operational state, converts raw CLI output into structured snapshots, and explains what to check next.
+**A local-first infrastructure intelligence layer for AI-assisted operations.**
 
-It is designed for engineers who want a practical troubleshooting tool, not a hosted platform. MindNet stays terminal-first, runs locally, avoids outbound telemetry by default, and keeps deterministic analysis at the center of the product.
+MindNet is a serious infrastructure software project aimed at helping engineers
+understand, model, reason about, and operate infrastructure environments with
+better context and safer decision-making.
 
-The package path remains `netmind` for compatibility, but the product name and primary CLI command are `MindNet` and `mindnet`.
+Today, MindNet provides a local CLI, deterministic parsers, snapshot modeling,
+connector abstractions, offline analysis, and a rule-based findings pipeline.
+Longer term, it is intended to evolve into an infrastructure reasoning engine
+that can ingest state, interpret intent, plan actions, and hand execution off
+to purpose-built tools.
 
-## What Problem MindNet Solves
+## Overview
 
-Network troubleshooting usually starts with raw device commands and a mental checklist. That is effective, but it is repetitive, hard to standardize, and easy to lose context across devices and incidents.
+MindNet is not positioned as "just another network CLI helper".
 
-MindNet helps by:
+It is the beginning of an infrastructure intelligence layer:
+- local-first by default
+- deterministic before generative
+- reasoning-oriented rather than execution-oriented
+- designed to model infrastructure state, not just print command output
 
-- connecting to devices over SSH
-- collecting a known set of operational commands
-- normalizing the results into a structured snapshot
-- running deterministic checks on the collected state
-- returning plain-language summaries and useful next commands
+MindNet currently focuses on:
+- collecting infrastructure context through CLI-oriented workflows
+- normalizing outputs into structured models
+- generating deterministic findings and explanations
+- supporting offline analysis for saved or pasted outputs
 
-## Who It Is For
+## Why MindNet exists
 
-- network engineers working on switches and routers
-- platform or infra teams responsible for network-adjacent operations
-- operators who want local analysis without a SaaS dependency
-- teams that want AI-assisted explanation on top of a deterministic core
+Most infrastructure tooling falls into one of two categories:
+- execution tools that run commands, apply configuration, or orchestrate tasks
+- dashboards that display state but do not reason well about what it means
 
-## Current Stage
+MindNet exists to fill the gap between those layers.
 
-MindNet is an early but usable MVP. The core CLI, snapshot model, rule engine, offline analysis paths, connector management, mock mode, and tests are already present. The project is still maturing in documentation, CI, connector breadth, and deeper analysis coverage.
+The project is intended to become a system that can:
+- understand infrastructure context
+- reason about relationships between devices, services, and topology
+- interpret operator intent
+- plan safe next steps
+- hand off execution to a more appropriate tool when action is required
 
-## Features
+That distinction matters because useful AI in infrastructure is not only about
+generating commands. It is about understanding context before execution.
 
-- local-first CLI with `connect`, `run`, `audit`, `shell`, and snapshot workflows
-- deterministic analysis over structured `DeviceSnapshot` data
-- offline analysis for pasted or saved command output
-- mock mode for demos, development, and safe testing
-- connector management with OS keyring-backed secret storage
-- SSH and connector abstraction layers for future expansion
-- plain-language explanations and recommended next commands
+## Core concepts
 
-## Architecture Overview
+MindNet is built around a few core ideas:
 
-MindNet follows a straightforward local pipeline:
+- `Context ingestion`: collect raw operational data from commands, files, and future connectors.
+- `Infrastructure modeling`: turn raw outputs into typed structures such as interfaces, routes, neighbors, and snapshots.
+- `Deterministic reasoning`: derive findings from rules before layering on optional AI explanations.
+- `Intent-aware evolution`: prepare the system to understand what an engineer wants, not only what a device returns.
+- `Execution handoff`: keep reasoning and execution separate so actions can later be delegated safely.
+- `Local-first operation`: keep analysis, state, and credentials local unless explicitly integrated elsewhere.
 
-```text
-Operator Request
-      |
-      v
-CLI Layer
-      |
-      v
-Connector Resolution
-      |
-      v
-SSH / API Collection
-      |
-      v
-Snapshot Model
-      |
-      v
-Deterministic Rules
-      |
-      v
-Formatter / Explanation Layer
-```
+## Key capabilities
 
-The key design choice is that deterministic collection and rules remain the source of truth. Any explanation layer should build on that output, not replace it.
+Current capabilities:
+- SSH-based device connectivity checks
+- single-command execution
+- predefined audit bundle
+- structured device snapshots
+- deterministic rule evaluation
+- plain-language command explanation
+- offline analysis for pasted or saved CLI output
+- connector abstraction for future API-backed collection
+- secure local credential storage via OS keyring
 
-More detail is available in [ARCHITECTURE.md](ARCHITECTURE.md).
+Near-term capabilities implied by the current architecture:
+- broader infrastructure context ingestion
+- topology-aware correlation
+- session and state continuity
+- intent parsing and planning
+- integration with execution-oriented systems
 
-## Installation
+## How it differs from MidMan
+
+MindNet and MidMan should not collapse into the same identity.
+
+| Area | MindNet | MidMan |
+|---|---|---|
+| Primary role | reasoning and infrastructure intelligence | safe execution and diagnostics |
+| Focus | understanding context and planning | interacting with targets directly |
+| Main output | models, findings, explanations, plans | command execution, operational workflows |
+| Scope | infra understanding across devices/services/topology | direct CLI-first operations |
+| Future direction | reasoning engine, orchestration layer, context graph | operator-facing execution assistant |
+
+Short version:
+- **MidMan** should be the thing that executes safely.
+- **MindNet** should be the thing that understands what should happen before execution.
+
+## Architecture overview
+
+MindNet currently has a practical MVP architecture:
+- CLI entrypoint in `src/netmind/cli.py`
+- connector abstraction in `src/netmind/connectors/`
+- security/config storage in `src/netmind/security/`
+- snapshot-oriented modeling in `src/netmind/models.py`
+- deterministic rules in `src/netmind/rules.py`
+- parsing and explanation in `src/netmind/explain.py`
+
+This is enough to support a credible next step toward infrastructure reasoning.
+
+High-level flow:
+1. collect context from a device, file, or stdin
+2. normalize it into typed structures
+3. evaluate deterministic rules
+4. explain findings in operator-friendly language
+5. preserve the option for later planning and execution handoff
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the longer architecture view.
+
+## Project status
+
+MindNet is in an **early local-first MVP** stage.
+
+What exists now:
+- installable CLI entrypoint: `mindnet`
+- mock mode for offline development
+- SSH connector path
+- snapshot model and deterministic rule engine
+- offline CLI analysis commands
+- basic CI
+
+What does **not** exist yet:
+- service or topology graph
+- intent parser
+- planning engine
+- persistent operational memory
+- multi-agent orchestration
+- web UI or hosted control plane
+
+This repository should therefore be read as:
+- technically real
+- strategically opinionated
+- intentionally early
+
+## Getting started
 
 Requirements:
-
 - Python 3.11+
-- a virtual environment
-- OS keyring support if you want saved connector secrets
+- local development environment
+- optional OS keyring support for stored credentials
+
+### Local development install
 
 ```bash
+git clone https://github.com/x2vmbwtsjf-afk/mindnet.git
+cd mindnet
+
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+
+pip install -r requirements.txt
+pip install -e .
 ```
 
-Optional install with `pipx`:
+### Product-style install with `pipx`
 
 ```bash
 pipx install .
 ```
 
+Install directly from GitHub:
+
+```bash
+pipx install git+https://github.com/x2vmbwtsjf-afk/mindnet.git
+```
+
 Verify:
 
 ```bash
+mindnet --help
 mindnet version
 ```
 
-Compatibility alias:
+## Usage examples
 
-```bash
-netmind version
-```
-
-## CLI Usage Examples
-
-Mock mode:
+### Mock mode
 
 ```bash
 export NETMIND_MOCK=true
+
 mindnet connect 10.0.0.1
+mindnet status 10.0.0.1
 mindnet run 10.0.0.1 "show version"
 mindnet audit 10.0.0.1
-mindnet snapshot export 10.0.0.1 /tmp/mindnet-snapshot.json
-mindnet snapshot analyze /tmp/mindnet-snapshot.json
 ```
 
-Live device:
+### Status dashboard
+
+MindNet can render a compact CLI-native dashboard for the current infrastructure
+snapshot, including health score, connected devices, observed platforms,
+snapshot age, routing posture, interface hotspots, and recommended next steps.
 
 ```bash
-mindnet connect 192.168.1.1 --username admin --password 'secret'
-mindnet audit 192.168.1.1 --username admin --password 'secret'
+export NETMIND_MOCK=true
+mindnet status 10.0.0.1
 ```
 
-Offline analysis:
+![MindNet status dashboard](docs/images/status-dashboard.png)
+
+### Offline analysis from a file
 
 ```bash
 mindnet analyze-file mock_data/show__ip__route.txt
 mindnet analyze-file --type interfaces-status mock_data/show__interfaces__status.txt
+```
+
+### Offline analysis from stdin
+
+```bash
 cat mock_data/show__cdp__neighbors.txt | mindnet explain-output
+cat mock_data/show__interfaces__status.txt | mindnet explain-output --type interfaces-status
 ```
 
-Connector management:
+### Snapshot workflow
 
 ```bash
-mindnet connector add
-mindnet connector list
-mindnet connector show lab-core-1
-mindnet connect lab-core-1
+export NETMIND_MOCK=true
+mindnet snapshot export 10.0.0.1 /tmp/mindnet-snapshot.json
+mindnet snapshot show /tmp/mindnet-snapshot.json
+mindnet snapshot analyze /tmp/mindnet-snapshot.json
 ```
-
-## Connectors
-
-MindNet currently supports saved connectors with local metadata and OS-managed secrets.
-
-Stored in local config:
-
-- connector name
-- host
-- platform
-- connector type
-- username
-
-Stored in OS keyring only:
-
-- password
-- token
-- API secret
-
-Backends depend on the `keyring` library and may use macOS Keychain, Windows Credential Manager, or Linux Secret Service depending on the host platform.
-
-## Snapshots And Analysis
-
-The default audit bundle currently collects:
-
-- `show version`
-- `show ip interface brief`
-- `show interfaces status`
-- `show cdp neighbors`
-- `show ip route`
-- `show interfaces`
-
-Those outputs are normalized into a snapshot that can include:
-
-- interfaces
-- routes
-- neighbors
-- findings
-
-Saved snapshots let you analyze device state later without reconnecting to the original target.
-
-## Security Philosophy
-
-MindNet is intended for observation and explanation, not autonomous remediation.
-
-- local-first is the default operating model
-- secrets should live in the OS keyring, not in tracked files
-- deterministic rules stay ahead of AI-generated interpretation
-- mock mode should remain available for safe demos and tests
-- no outbound telemetry is enabled by default
-
-The security model is documented in [SECURITY.md](SECURITY.md).
-
-## Example Troubleshooting Session
-
-```text
-$ export NETMIND_MOCK=true
-$ mindnet audit 10.0.0.1
-
-Connecting to 10.0.0.1
-Collecting audit bundle
-Building device snapshot
-Evaluating deterministic rules
-
-Critical findings:
-  - Port Gi1/0/3 is err-disabled
-
-Recommended next commands:
-  - show interfaces Gi1/0/3
-  - show port-security interface Gi1/0/3
-  - show errdisable recovery
-```
-
-## Developer Onboarding
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-pytest
-mindnet --help
-```
-
-More detail is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Roadmap
 
-MindNet is being developed in six phases:
+MindNet should evolve in stages, not by overpromising.
 
-1. CLI MVP
-2. Snapshot model
-3. Rule engine
-4. Fabric collection
-5. Simulation
-6. AI explanation
+Current roadmap direction:
+1. local-first MVP and reliable modeling
+2. infrastructure context and topology awareness
+3. intent understanding and action planning
+4. execution handoff into tools such as MidMan
+5. session memory and operational context
+6. multi-node and multi-environment orchestration
+7. ecosystem integrations and broader interfaces
 
-See [ROADMAP.md](ROADMAP.md) for details.
+See [ROADMAP.md](ROADMAP.md) for the detailed phased plan.
+
+## Contributing
+
+MindNet is still defining its long-term architecture, which makes good
+contributions especially valuable.
+
+Good contribution areas:
+- parser quality
+- context modeling
+- connector abstractions
+- reasoning modules
+- documentation and architecture clarification
+- safety and security hardening
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and contribution guidance.
 
 ## License
 
-MindNet is released under the MIT License. See [LICENSE](LICENSE).
+MIT

@@ -1,102 +1,122 @@
 # MindNet Roadmap
 
-This roadmap is organized into six execution phases and is intended to keep MindNet practical, local-first, and trustworthy as the project grows.
+MindNet is intended to grow from a practical local CLI into a broader
+infrastructure reasoning and orchestration layer. The roadmap below is ordered
+to keep the project technically honest while preserving the long-term vision.
 
-## Phase 1 — CLI MVP
+## Phase 1 — Local-first MVP
+
 Goal:
-- Deliver a reliable local CLI foundation for day-to-day network troubleshooting.
+- establish a credible local-first foundation for context collection, modeling, and explanation
 
 Scope:
-- Commands: `version`, `connect`, `run`, `audit`, `shell`
-- SSH workflow abstraction with mock-mode fallback
-- Structured findings + plain-language guidance + next commands
-- Stable terminal UX and error handling
+- installable CLI
+- connector abstraction
+- snapshot model
+- deterministic rule engine
+- offline file/stdin analysis
+- secure local credential handling
 
-Exit Criteria:
-- Fresh install to first successful mock audit in under 10 minutes
-- Core commands validated in mock mode
-- Basic parser and formatter regression tests passing
+Exit criteria:
+- clean local install
+- repeatable mock-mode workflows
+- deterministic findings from both live and offline inputs
 
-Current emphasis:
-- tighten contributor onboarding and CI
-- broaden command parsing and offline analysis coverage
-- keep the product polished without turning it into a hosted platform
+## Phase 2 — Infrastructure context and topology awareness
 
-## Phase 2 — Snapshot Model
 Goal:
-- Represent network state as structured snapshots instead of ad-hoc command output.
+- move beyond isolated command parsing into broader infrastructure context
 
 Scope:
-- Snapshot schema for interfaces, routes, neighbors, device metadata
-- Local snapshot save/load format
-- Snapshot versioning strategy for future compatibility
+- richer host/device metadata
+- topology primitives
+- cross-command correlation
+- service and dependency context groundwork
 
-Exit Criteria:
-- CLI can export and load snapshots locally
-- Snapshot schema documented and test-covered
-- Deterministic snapshot generation in mock and live paths
+Exit criteria:
+- context model can represent more than a single device state
+- topology relationships are explicit, not implied by prose
 
-## Phase 3 — Rule Engine
+## Phase 3 — Intent understanding and action planning
+
 Goal:
-- Add deterministic analysis over snapshots with clear, testable rules.
+- add a reasoning layer that can interpret what an engineer is trying to accomplish
 
 Scope:
-- Rule registry and evaluation pipeline
-- Severity model and standardized evidence output
-- Rule packs for interface, routing, and neighbor health
+- operator intent parsing
+- plan generation
+- explanation of assumptions and confidence
+- deterministic planning scaffolding before any generative layer
 
-Exit Criteria:
-- Rules run on snapshots without live device dependency
-- Findings include severity, evidence, explanation seed, and recommended next checks
-- Unit tests cover rule correctness and edge cases
+Exit criteria:
+- system can generate structured next-step plans, not only findings
+- plans separate facts, assumptions, and recommendations
 
-## Phase 4 — Fabric Collection
+## Phase 4 — Integration with execution tools like MidMan
+
 Goal:
-- Collect state across multiple devices/fabric nodes in one workflow.
+- connect MindNet reasoning to execution-oriented tools without merging identities
 
 Scope:
-- Multi-device inventory input
-- Collection orchestration (safe parallelism where appropriate)
-- Aggregated snapshot for fabric-level reasoning
+- clear handoff contracts
+- plan export for execution
+- guardrails for safe downstream action
+- interoperability with MidMan or similar execution systems
 
-Exit Criteria:
-- Multi-node collection completes with partial-failure tolerance
-- Fabric snapshot contains per-device and normalized cross-device sections
-- Collection logs are operator-readable and debuggable
+Exit criteria:
+- MindNet can produce an execution-ready plan
+- execution remains out-of-process or delegated
 
-## Phase 5 — Simulation
+## Phase 5 — Memory, sessions, and operational context
+
 Goal:
-- Evaluate potential failure scenarios against collected/snapshotted state.
+- preserve state across analysis sessions
 
 Scope:
-- Scenario model (link down, node down, control-plane loss)
-- Impact estimation framework
-- CLI simulation commands with explicit assumptions
+- local session memory
+- operator context
+- change timelines
+- reusable context bundles and saved investigations
 
-Exit Criteria:
-- Simulations produce reproducible impact summaries
-- Output distinguishes facts from assumptions
-- Baseline scenarios validated against mock lab topologies
+Exit criteria:
+- repeated sessions can build on prior state
+- context continuity improves analysis quality without losing transparency
 
-## Phase 6 — AI Explanation
+## Phase 6 — Multi-node / multi-environment orchestration
+
 Goal:
-- Add AI-assisted explanation and guided troubleshooting on top of deterministic outputs.
+- reason across many nodes, services, or environments at once
 
 Scope:
-- Optional AI layer (local-first preference)
-- Prompting based on structured findings/snapshots/rule output
-- Guided next-step narratives with confidence indicators
+- multi-node collection
+- partial failure tolerance
+- aggregated context and planning
+- environment-aware reasoning
 
-Exit Criteria:
-- AI mode can be toggled without changing deterministic core behavior
-- Explanations reference concrete evidence
-- Safe fallback to non-AI output when unavailable
+Exit criteria:
+- system can reason across a set of related infrastructure targets
+- outputs remain debuggable and attributable
 
-## Cross-Phase Guardrails
-- Local-first, terminal-first architecture remains mandatory
-- Deterministic analysis is always the source of truth
-- No autonomous remediation by default
-- Every phase must include tests and docs updates
+## Phase 7 — API / UI / ecosystem integrations
 
----
-Principle: keep MindNet practical, trustworthy, and operator-first at every stage.
+Goal:
+- expose MindNet as a broader infrastructure intelligence component
+
+Scope:
+- API surfaces
+- richer clients or UI layers
+- ecosystem integrations
+- external orchestration hooks
+
+Exit criteria:
+- MindNet can serve as a reusable intelligence layer beyond the local CLI
+- integration boundaries remain clear and secure
+
+## Guardrails
+
+These constraints apply across every phase:
+- local-first remains the default posture
+- deterministic logic remains the foundation
+- execution and reasoning stay separable
+- security boundaries remain explicit
+- documentation and tests must grow with the architecture

@@ -16,6 +16,7 @@ COMMAND_TREE: Dict[str, dict] = {
             "bgp": {"summary": {}},
         },
         "version": {},
+        "status": {},
         "interfaces": {"status": {}},
         "cdp": {"neighbors": {"detail": {}}},
         "running-config": {},
@@ -38,6 +39,21 @@ MOCK_OUTPUTS = {
         "Cisco IOS XE Software, Version 17.09.04a\n"
         "Device uptime is 4 weeks, 2 days, 6 hours\n"
         'System image file is "bootflash:packages.conf"\n'
+    ),
+    "show status": (
+        "Infrastructure Status\n"
+        "Health score: 72/100\n"
+        "Summary: warnings require review\n\n"
+        "Signals\n"
+        "- Interfaces up: 3\n"
+        "- Unexpected down: 0\n"
+        "- Err-disabled: 1\n"
+        "- Default route: present\n"
+        "- Neighbors: 1\n\n"
+        "Priority actions\n"
+        "- show interfaces status\n"
+        "- show errdisable recovery\n"
+        "- show cdp neighbors detail\n"
     ),
     "show ip route": (
         "Codes: C - connected, S - static, O - OSPF, B - BGP\n\n"
@@ -114,20 +130,25 @@ MOCK_OUTPUTS = {
 
 
 BANNER = """
-╔══════════════════════════════════════════════╗
-                   MindNet
-            AI Infrastructure Brain
-╚══════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════╗
+                         MindNet
+                  AI Infrastructure Brain
+╚══════════════════════════════════════════════════════════╝
 
 MindNet analyzes servers, networks, and cloud infrastructure
 and provides automated diagnostics, recommendations, and actions.
 
-Capabilities
-- AI system diagnostics
-- Infrastructure analysis
-- Network troubleshooting
-- Intelligent automation
-- Command generation
+Workflows
+- Inspect live infrastructure context
+- Analyze saved CLI evidence offline
+- Review deterministic findings and risks
+- Simulate impact across key network nodes
+
+Quick start
+- connect <device>
+- audit
+- show topology
+- help
 
 Type 'help' to see available commands.
 Type 'connect <device>' to begin.
@@ -194,18 +215,23 @@ class NetMindShell(cmd.Cmd):
         return self.do_exit(arg)
 
     def do_help(self, arg: str) -> None:
-        print("MindNet command reference")
+        print("MindNet shell reference")
         print()
-        print("Core Commands")
-        print("  connect <device>       Start a local infrastructure session context")
-        print("  show health            Display platform health summary")
-        print("  audit                  Run automated infrastructure diagnostics")
-        print("  explain-output         Reserved for offline output analysis")
+        print("Session Workflow")
+        print("  connect <device>       Open a local analysis context for a target")
+        print("  audit                  Run the built-in diagnostics bundle")
+        print("  explain-output         Use the main CLI for pasted offline evidence")
         print()
-        print("Analysis and Simulation")
+        print("Context and Analysis")
+        print("  show status            View the compact infrastructure status dashboard")
+        print("  show version           Inspect platform software and uptime details")
         print("  show topology          View the current infrastructure topology snapshot")
         print("  show impact            Explore example impact questions")
         print("  show risks             View detected infrastructure risks")
+        print("  show ip route          Inspect routing state")
+        print("  show interfaces status Inspect switchport operational state")
+        print()
+        print("Simulation")
         print("  simulate leaf <id>     Simulate a leaf-node failure scenario")
         print("  simulate spine <id>    Simulate a spine-node failure scenario")
         print()
@@ -302,8 +328,9 @@ class NetMindShell(cmd.Cmd):
         if normalized.startswith("connect "):
             target = normalized.split(" ", 1)[1]
             print(f"Establishing analysis context for {target} ...")
-            print("Local infrastructure session ready")
-            print("Status: connected (mock)")
+            print("MindNet session ready")
+            print("Mode: local mock infrastructure context")
+            print("Status: connected")
             self.prompt = self._build_prompt(target)
             return
 
@@ -316,7 +343,7 @@ class NetMindShell(cmd.Cmd):
             return
 
         if normalized == "explain-output":
-            print("Paste CLI output into a future version. For now this is a placeholder.")
+            print("Use `mindnet explain-output` from the main CLI to analyze pasted evidence.")
             return
 
         if normalized.startswith("simulate leaf"):

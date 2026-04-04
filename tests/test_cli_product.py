@@ -10,6 +10,14 @@ from netmind.cli import app
 runner = CliRunner()
 
 
+def test_no_args_prints_product_overview():
+    result = runner.invoke(app, [])
+    assert result.exit_code == 0
+    assert "MindNet" in result.stdout
+    assert "local-first infrastructure intelligence console" in result.stdout
+    assert "Quick start" in result.stdout
+
+
 def test_help_uses_mindnet_branding():
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
@@ -21,6 +29,26 @@ def test_version_command_prints_product_name():
     result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
     assert "MindNet" in result.stdout
+    assert "AI Infrastructure Brain" in result.stdout
+
+
+def test_status_command_renders_dashboard_in_mock_mode(monkeypatch):
+    monkeypatch.setenv("NETMIND_MOCK", "true")
+    result = runner.invoke(app, ["status", "10.0.0.1"])
+    assert result.exit_code == 0
+    assert "Infrastructure Status" in result.stdout
+    assert "Health score" in result.stdout
+    assert "Snapshot age" in result.stdout
+    assert "Topology Context" in result.stdout
+    assert "Platforms/modul" in result.stdout
+    assert "Findings Breakdown" in result.stdout
+    assert "Interface Spotlight" in result.stdout
+    assert "Top Findings" in result.stdout
+    assert "Recommended Actions" in result.stdout
+    assert "Summary" in result.stdout
+    assert "Interfaces" in result.stdout
+    assert "Routing" in result.stdout
+    assert "10.0.0.1" in result.stdout
 
 
 def test_analyze_file_with_auto_detect(tmp_path: Path):

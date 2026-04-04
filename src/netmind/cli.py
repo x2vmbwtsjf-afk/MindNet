@@ -46,6 +46,15 @@ console = Console()
 load_dotenv()
 
 
+@app.callback(invoke_without_command=True)
+def main_callback(ctx: typer.Context) -> None:
+    """Render a product-style landing view when MindNet is invoked without a subcommand."""
+    if ctx.resilient_parsing:
+        return
+    if ctx.invoked_subcommand is None:
+        formatters.print_product_overview(console)
+
+
 # ---------------------------------------------------------------------------
 # Shared option factory
 # Typer doesn't support reusable option groups natively, so we define
@@ -122,6 +131,8 @@ def _require_credentials(profile: DeviceProfile) -> None:
 @app.command()
 def version() -> None:
     """Print MindNet version information."""
+    formatters.print_banner(console)
+    console.print()
     formatters.print_version(console)
 
 
@@ -160,6 +171,11 @@ def connect(
     if not _is_mock_mode():
         _require_credentials(profile)
 
+    formatters.print_operation_banner(
+        console,
+        "Connectivity Check",
+        "Validate transport access before running diagnostics or collection.",
+    )
     console.print(
         f"[dim]Connecting to[/dim] [cyan]{display_target}:{profile.port}[/cyan] [dim]...[/dim]"
     )
@@ -203,6 +219,11 @@ def run(
     if not _is_mock_mode():
         _require_credentials(profile)
 
+    formatters.print_operation_banner(
+        console,
+        "Command Execution",
+        "Capture raw device output and attach deterministic explanation.",
+    )
     console.print(f"[dim]Running on[/dim] [cyan]{host}[/cyan]: [white]{command}[/white]")
 
     result = ssh_client.run_command(profile, command)
@@ -266,7 +287,11 @@ def audit(
     if not _is_mock_mode():
         _require_credentials(profile)
 
-    console.print()
+    formatters.print_operation_banner(
+        console,
+        "Infrastructure Audit",
+        "Collect a deterministic evidence bundle and evaluate it for operational risk.",
+    )
     console.print(f"[dim]Starting audit on[/dim] [cyan]{host}[/cyan] [dim]...[/dim]")
     console.print(f"[dim]Running {len(audit_module.AUDIT_COMMANDS)} commands[/dim]")
     console.print()
@@ -283,6 +308,49 @@ def audit(
     # Exit with non-zero code if critical findings exist
     if report.critical_count > 0:
         raise typer.Exit(code=2)
+
+
+# ---------------------------------------------------------------------------
+# status
+# ---------------------------------------------------------------------------
+
+@app.command()
+def status(
+    host: str = typer.Argument(..., help="Device IP address, hostname, or saved connector name"),
+    username: str = typer.Option("", "--username", "-u", help="SSH username"),
+    password: str = typer.Option("", "--password", "-p", help="SSH password", hide_input=True),
+    port: int = typer.Option(22, "--port", help="SSH port"),
+    device_type: str = typer.Option(DeviceType.CISCO_IOS, "--device-type", "-d"),
+    secret: str = typer.Option("", "--secret", "-s", hide_input=True),
+    timeout: int = typer.Option(30, "--timeout", "-t"),
+) -> None:
+    """
+    Render a compact infrastructure status dashboard for a target.
+
+    This command uses the standard audit collection bundle, then summarizes the
+    resulting snapshot into a CLI-native dashboard view.
+    """
+    profile = _build_profile_from_saved_connector(host, timeout)
+    display_target = host
+    if profile is None:
+        profile = _build_profile(host, username, password, port, device_type, secret, timeout)
+    else:
+        display_target = profile.host
+
+    if not _is_mock_mode():
+        _require_credentials(profile)
+
+    formatters.print_operation_banner(
+        console,
+        "Infrastructure Status",
+        "Collect current evidence and render a compact health dashboard.",
+    )
+    console.print(f"[dim]Building status view for[/dim] [cyan]{display_target}[/cyan] [dim]...[/dim]")
+    console.print(f"[dim]Collecting {len(audit_module.AUDIT_COMMANDS)} commands for the snapshot[/dim]")
+
+    report = audit_module.run_audit(profile)
+    report = explain.analyze_report(report)
+    formatters.print_status_dashboard(console, report)
 
 
 # ---------------------------------------------------------------------------
@@ -314,6 +382,12 @@ def explain_output(
     if not output.strip():
         formatters.print_error(console, "Received empty stdin input.")
         raise typer.Exit(code=1)
+
+    formatters.print_operation_banner(
+        console,
+        "Offline Output Analysis",
+        "Interpret pasted CLI evidence without needing live device access.",
+    )
 
     try:
         command, _snapshot, findings, explanation_data = explain.analyze_offline_output(
@@ -360,6 +434,12 @@ def analyze_file(
     if not output.strip():
         formatters.print_error(console, "Input file is empty.")
         raise typer.Exit(code=1)
+
+    formatters.print_operation_banner(
+        console,
+        "Offline File Analysis",
+        "Interpret saved CLI evidence and produce findings, context, and next steps.",
+    )
 
     try:
         command, _snapshot, findings, explanation_data = explain.analyze_offline_output(

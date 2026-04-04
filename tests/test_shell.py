@@ -9,6 +9,7 @@ from netmind.shell import BANNER, NetMindShell
 def test_banner_uses_mindnet_branding():
     assert "MindNet" in BANNER
     assert "AI Infrastructure Brain" in BANNER
+    assert "Quick start" in BANNER
     assert "Cisco-like" not in BANNER
 
 
@@ -23,7 +24,7 @@ def test_connect_sets_context_prompt_for_hostname():
     with redirect_stdout(buffer):
         shell._execute("connect leaf3", {})
     assert shell.prompt == "mindnet:leaf3> "
-    assert "Local infrastructure session ready" in buffer.getvalue()
+    assert "MindNet session ready" in buffer.getvalue()
 
 
 def test_connect_sets_fallback_prompt_for_ip():
@@ -32,7 +33,7 @@ def test_connect_sets_fallback_prompt_for_ip():
     with redirect_stdout(buffer):
         shell._execute("connect 10.0.0.1", {})
     assert shell.prompt == "mindnet:connected> "
-    assert "Status: connected (mock)" in buffer.getvalue()
+    assert "Status: connected" in buffer.getvalue()
 
 
 def test_help_output_uses_modern_sections():
@@ -41,7 +42,19 @@ def test_help_output_uses_modern_sections():
     with redirect_stdout(buffer):
         shell.do_help("")
     output = buffer.getvalue()
-    assert "Core Commands" in output
-    assert "Analysis and Simulation" in output
+    assert "Session Workflow" in output
+    assert "Context and Analysis" in output
+    assert "Simulation" in output
     assert "Utilities" in output
     assert "Cisco-like" not in output
+
+
+def test_show_status_is_available_in_shell():
+    shell = NetMindShell()
+    buffer = StringIO()
+    with redirect_stdout(buffer):
+        shell._execute("show status", {})
+    output = buffer.getvalue()
+    assert "Infrastructure Status" in output
+    assert "Health score" in output
+    assert "Priority actions" in output

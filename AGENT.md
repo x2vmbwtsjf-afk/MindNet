@@ -4,8 +4,9 @@ This file is the working contract for AI coding agents operating in this reposit
 If there is any conflict between code style preferences and this guide, follow this guide.
 
 ## 1) Mission
-MindNet is a local, terminal-first infrastructure analysis tool for network engineers.
-It wraps Cisco-style workflows and improves operator decisions with deterministic analysis first, then explanation.
+MindNet is a local-first infrastructure intelligence layer for AI-assisted operations.
+It should evolve toward infrastructure reasoning, context modeling, and execution handoff,
+with deterministic analysis first and optional AI augmentation later.
 
 ## 2) Product Boundaries
 ### In scope (current)
@@ -14,6 +15,7 @@ It wraps Cisco-style workflows and improves operator decisions with deterministi
 - Lightweight parsing for immediate troubleshooting value
 - Plain-language explanations and recommended next commands
 - Mock mode for development without live devices
+- Early infrastructure modeling and snapshot-based reasoning
 
 ### Out of scope (current)
 - Cloud services, remote control planes
@@ -160,6 +162,7 @@ A task is done when:
 
 ### Future
 - Vendor abstraction for Cisco, Arista, Juniper via normalized interfaces.
+- Broader infrastructure context, planning, and orchestration handoff.
 
 ---
 If unsure, choose the simpler local-first implementation that preserves operator trust and debuggability.

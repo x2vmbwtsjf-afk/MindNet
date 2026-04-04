@@ -1,127 +1,232 @@
 # MindNet Architecture
 
-MindNet is a local-first network diagnostics CLI. It collects operational device state, normalizes that data into a snapshot, evaluates deterministic rules, and then formats the results for terminal use.
+MindNet is designed as a local-first infrastructure intelligence layer. The
+current implementation is intentionally modest, but the architecture should be
+understood as a foundation for a reasoning-oriented system rather than only a
+CLI wrapper around SSH.
 
-## Simple Diagram
+## Design intent
 
-```text
-Operator Request
-      |
-      v
-CLI Layer
-      |
-      v
-Connector Resolution
-      |
-      v
-SSH / API Collection
-      |
-      v
-Snapshot Model
-      |
-      v
-Rule Engine
-      |
-      v
-Formatter / Explanation Layer
-```
+MindNet should evolve toward a system that can:
+- ingest infrastructure context from multiple sources
+- build structured models of state and relationships
+- interpret operator intent
+- plan actions before execution
+- hand execution off to purpose-built systems
 
-The central design rule is that deterministic collection and rules define the product’s truth. Explanation layers can summarize or enrich findings, but they should not replace the collected evidence.
+The project therefore separates:
+- context collection
+- modeling
+- reasoning
+- explanation
+- execution handoff
 
-## CLI Layer
+## Current architecture
 
-The Typer-based CLI in `src/netmind/cli.py` is the operator-facing entrypoint.
-
-Responsibilities:
-
-- parse commands and options
-- load environment defaults
-- build device profiles
-- route requests into connectors, collectors, snapshots, and formatters
-- keep the operator workflow local and terminal-first
-
-## Connector Resolution
-
-Connectors abstract how MindNet talks to a target.
-
-Current scope:
-
-- SSH connectors for device command collection
-- API connector abstraction for future expansion
-- saved connector metadata with secret resolution from the local credential store
-
-This allows the CLI and analysis layers to stay decoupled from transport details.
-
-## SSH / API Collection
-
-Collection is responsible for:
-
-- connectivity validation
-- single-command execution
-- audit bundle collection
-- mock-mode fallback for local testing
-
-Collection should stay narrow and explicit. MindNet is not trying to become a generic automation runtime.
-
-## Snapshot Model
-
-The snapshot model converts raw command outputs into structured Python models.
-
-Current normalized entities include:
-
-- interfaces
-- routes
-- neighbors
-- raw command outputs
-
-Snapshots make it possible to analyze a device without re-reading ad hoc text blobs everywhere in the codebase.
-
-## Rule Engine
-
-The deterministic rule engine evaluates snapshots and produces typed findings.
-
-Examples include:
-
-- unexpected interfaces down
-- administratively down interfaces
-- err-disabled ports
-- interface error counters
-- missing default route
-- absent CDP neighbors
-
-This layer is the basis for trust in MindNet. It is testable, reviewable, and independent of optional AI features.
-
-## Formatter / Explanation Layer
-
-The formatter layer turns findings and raw outputs into operator-friendly terminal output.
-
-Responsibilities:
-
-- present connectivity and command results
-- summarize findings
-- explain likely meaning in plain language
-- suggest useful next commands
-
-Any future AI-assisted explanation should build on snapshot and rule outputs rather than bypass them.
-
-## Security And Local State
-
-MindNet stores connector metadata locally and keeps secrets in the OS keyring. It is intentionally local-first and avoids outbound telemetry by default.
-
-See [../SECURITY.md](../SECURITY.md) for the security model.
-
-## Current Source Layout
-
-The repository already has a clean, package-oriented structure:
+Today, the repository is centered on these working layers:
 
 - `src/netmind/cli.py`
+  - user-facing command surface
 - `src/netmind/connectors/`
+  - transport and connector abstraction
 - `src/netmind/security/`
-- `src/netmind/audit.py`
-- `src/netmind/explain.py`
-- `src/netmind/rules.py`
+  - local config and credential handling
 - `src/netmind/models.py`
-- `src/netmind/formatters.py`
+  - typed infrastructure state objects
+- `src/netmind/explain.py`
+  - parsing and deterministic command understanding
+- `src/netmind/rules.py`
+  - deterministic findings and evaluation
 - `src/netmind/snapshot_store.py`
+  - persistence for structured state snapshots
 
-That structure is appropriate for the project’s current size and should remain the default until a concrete scaling need appears.
+## Architecture diagram
+
+```text
+                +----------------------+
+                |      CLI / API       |
+                |  commands, sessions  |
+                +----------+-----------+
+                           |
+                           v
+                +----------------------+
+                |   Context Ingestion  |
+                | SSH, file, stdin,    |
+                | future API sources   |
+                +----------+-----------+
+                           |
+                           v
+                +----------------------+
+                | Infrastructure Model |
+                | interfaces, routes,  |
+                | neighbors, snapshots |
+                +----------+-----------+
+                           |
+                           v
+                +----------------------+
+                | Reasoning / Rules    |
+                | findings, planning,  |
+                | intent alignment     |
+                +----------+-----------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+  +----------------------+   +------------------------+
+  | Explanation Layer    |   | Execution Handoff      |
+  | summaries, guidance, |   | MidMan, scripts,       |
+  | next-step narratives |   | orchestrators, future  |
+  +----------------------+   +------------------------+
+```
+
+## Context ingestion
+
+MindNet needs to accept context from more than one source.
+
+Current sources:
+- SSH command collection
+- local file analysis
+- stdin analysis
+- mock data
+
+Future sources:
+- infrastructure APIs
+- configuration repositories
+- service inventory systems
+- event streams
+
+This layer should stay connector-oriented so the reasoning system does not care
+whether state came from SSH, an API, or a saved bundle.
+
+## Infrastructure modeling
+
+The snapshot model is one of the most important architectural choices in the
+current repository.
+
+Instead of keeping analysis tied directly to raw command output, MindNet turns
+inputs into typed structures such as:
+- `Interface`
+- `Route`
+- `Neighbor`
+- `Finding`
+- `DeviceSnapshot`
+
+This is what makes later reasoning possible. The system cannot plan or compare
+state well if everything stays as raw text blobs.
+
+## Intent parsing
+
+Intent parsing is not implemented yet, but the architecture should clearly make
+space for it.
+
+Examples of operator intent:
+- "Why is traffic leaving through the wrong path?"
+- "What changed between yesterday and now?"
+- "What is the safest next step?"
+- "Plan, but do not execute, a remediation path."
+
+Intent parsing belongs above raw parsing and above transport. It should consume:
+- operator request
+- current context
+- prior session state
+- available tools/connectors
+
+and produce:
+- analysis goal
+- required context
+- recommended plan
+
+## Reasoning and planning layer
+
+Right now, reasoning is deterministic and rule-driven. That is the correct
+foundation.
+
+Longer term, this layer should grow into:
+- context correlation
+- topology-aware reasoning
+- plan generation
+- explicit assumptions and confidence
+- optional AI augmentation on top of structured evidence
+
+The key constraint is that reasoning should remain inspectable. MindNet should
+not become a black box that emits actions without traceable evidence.
+
+## Tool and connector abstraction
+
+MindNet already includes a connector abstraction. That matters because the
+reasoning system should not be tightly coupled to SSH.
+
+Connector abstraction supports:
+- multiple collection methods
+- safer testing and mock workflows
+- future integration with APIs
+- a clean execution handoff boundary
+
+## Execution handoff
+
+MindNet should not automatically become the execution layer for infrastructure.
+
+Instead, it should be able to:
+- produce structured findings
+- recommend next steps
+- generate explicit plans
+- hand those plans to an execution-oriented tool such as MidMan
+
+That boundary is important:
+- MindNet should understand context and plan
+- MidMan should execute safely
+
+## Memory and state
+
+The current repository already hints at local state handling through snapshots
+and connector metadata. A more complete future memory model could include:
+- saved investigations
+- local session context
+- prior findings
+- topology views
+- operator notes and assumptions
+
+This memory should remain local-first by default.
+
+## Local-first operation
+
+Local-first is not a cosmetic property. It is a design constraint.
+
+Why it matters:
+- infrastructure data is sensitive
+- operator trust depends on inspectability
+- local workflows are easier to secure and debug
+- deterministic reasoning is easier to validate locally
+
+MindNet can later integrate outward, but its baseline operating mode should not
+depend on a hosted control plane.
+
+## Future multi-agent or orchestration possibilities
+
+If MindNet evolves into a larger AI system, a useful decomposition might be:
+- context agent
+- reasoning agent
+- planning agent
+- execution handoff agent
+- memory/session agent
+
+That does not need to be implemented now. The important point is that the
+current architecture should not block that path.
+
+## Suggested future logical structure
+
+Without forcing a codebase rewrite today, a future logical decomposition could
+look like:
+
+```text
+src/netmind/
+    core/
+    context/
+    reasoning/
+    connectors/
+    memory/
+    orchestration/
+```
+
+The repository is not there yet, and it should not pretend to be there. But the
+project should be documented with that direction in mind.
